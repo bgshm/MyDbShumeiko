@@ -1,0 +1,172 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MyDbShumeiko.Ui.ViewModels"
+             xmlns:c="using:MyDbShumeiko.Contracts"
+             x:Class="MyDbShumeiko.Ui.Views.MainView"
+             x:DataType="vm:MainViewModel">
+
+  <UserControl.Styles>
+    <Style Selector="TextBlock.h">
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="FontSize" Value="15" />
+      <Setter Property="Margin" Value="0,12,0,4" />
+    </Style>
+    <Style Selector="TextBlock.label">
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="TextBlock.hint">
+      <Setter Property="Opacity" Value="0.6" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="TextBlock.status">
+      <Setter Property="Foreground" Value="#2E7D32" />
+    </Style>
+    <Style Selector="TextBlock.status.error">
+      <Setter Property="Foreground" Value="#D32F2F" />
+    </Style>
+  </UserControl.Styles>
+
+  <DockPanel>
+
+    <!-- Сервер і база -->
+    <Border DockPanel.Dock="Top" Padding="12,8" BorderThickness="0,0,0,1"
+            BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+      <WrapPanel>
+        <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,4,24,4">
+          <TextBlock Classes="label" Text="Сервер:" />
+          <TextBox Width="230" Text="{Binding ServerUrl}" />
+          <Button Content="Підключитися" Command="{Binding ConnectCommand}" />
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,4,24,4">
+          <TextBlock Classes="label" Text="База:" />
+          <ComboBox Width="230" PlaceholderText="виберіть базу"
+                    ItemsSource="{Binding Databases}" SelectedItem="{Binding SelectedDatabase}">
+            <ComboBox.ItemTemplate>
+              <DataTemplate x:DataType="c:DatabaseSummary">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <TextBlock Text="{Binding Name}" />
+                  <TextBlock Classes="hint" Text="(лише на диску)" IsVisible="{Binding !IsOpen}" />
+                  <TextBlock Classes="hint" Text="(не збережена)" IsVisible="{Binding !IsSaved}" />
+                </StackPanel>
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+          <Button Content="Зберегти на диск" Command="{Binding SaveDatabaseCommand}" />
+          <Button Content="Зчитати з диска" Command="{Binding ReloadDatabaseCommand}" />
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,4">
+          <TextBox Width="170" Watermark="назва нової бази" Text="{Binding NewDatabaseName}" />
+          <Button Content="Створити базу" Command="{Binding CreateDatabaseCommand}" />
+        </StackPanel>
+      </WrapPanel>
+    </Border>
+
+    <!-- Рядок стану -->
+    <Border DockPanel.Dock="Bottom" Padding="12,6" BorderThickness="0,1,0,0"
+            BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+      <TextBlock Classes="status" Classes.error="{Binding IsError}"
+                 Text="{Binding StatusMessage}" TextWrapping="Wrap" />
+    </Border>
+
+    <!-- Таблиці бази, створення таблиці, прямий добуток -->
+    <ScrollViewer DockPanel.Dock="Left" Width="340">
+      <StackPanel Margin="12,0,12,12">
+
+        <TextBlock Classes="h" Text="Таблиці" />
+        <ListBox Height="170" ItemsSource="{Binding Tables}" SelectedItem="{Binding SelectedTable}">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="c:TableSummary">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <TextBlock Text="{Binding Name}" />
+                <TextBlock Classes="hint" Text="{Binding RowCount, StringFormat='рядків: {0}'}" />
+              </StackPanel>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+        <Button Margin="0,6,0,0" Content="Знищити вибрану таблицю" Command="{Binding DropTableCommand}" />
+
+        <TextBlock Classes="h" Text="Нова таблиця" />
+        <TextBox Watermark="назва таблиці" Text="{Binding NewTableName}" />
+        <ItemsControl Margin="0,6,0,0" ItemsSource="{Binding NewColumns}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:NewColumnViewModel">
+              <Grid ColumnDefinitions="*,6,120,6,Auto" Margin="0,0,0,6">
+                <TextBox Grid.Column="0" Watermark="назва поля" Text="{Binding Name}" />
+                <ComboBox Grid.Column="2" HorizontalAlignment="Stretch"
+                          ItemsSource="{Binding Types}" SelectedItem="{Binding Type}" />
+                <Button Grid.Column="4" Content="×" ToolTip.Tip="Прибрати поле"
+                        Command="{Binding RemoveCommand}" />
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <Button Content="Додати поле" Command="{Binding AddColumnCommand}" />
+          <Button Content="Створити таблицю" Command="{Binding CreateTableCommand}" />
+        </StackPanel>
+
+        <TextBlock Classes="h" Text="Прямий добуток" />
+        <Grid ColumnDefinitions="*,Auto,*" RowDefinitions="Auto,6,Auto,6,Auto">
+          <ComboBox Grid.Column="0" HorizontalAlignment="Stretch" PlaceholderText="перша"
+                    ItemsSource="{Binding Tables}" SelectedItem="{Binding ProductFirst}">
+            <ComboBox.ItemTemplate>
+              <DataTemplate x:DataType="c:TableSummary">
+                <TextBlock Text="{Binding Name}" />
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+          <TextBlock Grid.Column="1" Classes="label" Margin="8,0" Text="×" />
+          <ComboBox Grid.Column="2" HorizontalAlignment="Stretch" PlaceholderText="друга"
+                    ItemsSource="{Binding Tables}" SelectedItem="{Binding ProductSecond}">
+            <ComboBox.ItemTemplate>
+              <DataTemplate x:DataType="c:TableSummary">
+                <TextBlock Text="{Binding Name}" />
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+          <TextBox Grid.Row="2" Grid.ColumnSpan="3" Watermark="назва таблиці-результату"
+                   Text="{Binding ProductResultName}" />
+          <Button Grid.Row="4" Grid.ColumnSpan="3" Content="Обчислити добуток"
+                  Command="{Binding ProductCommand}" />
+        </Grid>
+
+      </StackPanel>
+    </ScrollViewer>
+
+    <!-- Рядки вибраної таблиці та форма рядка -->
+    <Grid RowDefinitions="*,Auto" Margin="0,12,12,12">
+      <DataGrid x:Name="RowsGrid" Grid.Row="0"
+                ItemsSource="{Binding Rows}" SelectedItem="{Binding SelectedRow}"
+                AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single"
+                CanUserSortColumns="False" CanUserResizeColumns="True"
+                GridLinesVisibility="All" BorderThickness="1"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" />
+
+      <StackPanel Grid.Row="1" Margin="0,8,0,0">
+        <ItemsControl ItemsSource="{Binding Editors}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <WrapPanel />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:CellEditorViewModel">
+              <StackPanel Width="190" Margin="0,0,8,8">
+                <TextBlock Classes="hint" Text="{Binding Label}" TextTrimming="CharacterEllipsis" />
+                <TextBox Text="{Binding Value}" />
+              </StackPanel>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <Button Content="Додати як новий рядок" Command="{Binding AddRowCommand}" />
+          <Button Content="Зберегти зміни у вибраному рядку" Command="{Binding UpdateRowCommand}" />
+          <Button Content="Знищити вибраний рядок" Command="{Binding DeleteRowCommand}" />
+        </StackPanel>
+      </StackPanel>
+    </Grid>
+
+  </DockPanel>
+</UserControl>
